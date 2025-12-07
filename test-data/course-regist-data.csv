@@ -1,0 +1,7 @@
+testCase,name,email,phone,course,message,expectedResult
+valid,Nguyễn Văn A,nguyenvana@example.com,0912345678,Khóa học Lập trình Web,Em muốn đăng ký khóa học này,success
+missing_name,,nguyenb@example.com,0923456789,Khóa học Python,Tôi quan tâm đến khóa học này,error_name
+missing_email,Trần Thị B,,0934567890,Khóa học JavaScript,Em muốn học lập trình,error_email
+missing_phone,Lê Văn C,levanc@example.com,,Khóa học React,Cho tôi biết thêm thông tin,error_phone
+missing_course,Phạm Thị D,phamthid@example.com,0945678901,,Tôi muốn đăng ký,error_course
+missing_message,Hoàng Văn E,hoangvane@example.com,0956789012,Khóa học Node.js,,error_message

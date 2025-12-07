@@ -52,19 +52,24 @@ npm run test:debug
 
 ```
 playwright/
-├── pages/                 # Page Object Models
-│   ├── BasePage.ts       # Lớp cơ sở
-│   ├── OrderListPage.ts  # Trang danh sách đơn hàng
-│   └── OrderRegistPage.ts # Trang đăng ký đơn hàng
-├── tests/                # Test files
-│   └── OrderRegist.spec.ts # Test đăng ký đơn hàng
-├── test-data/            # Test data
-│   └── order-data.csv    # Dữ liệu test CSV
-├── utils/                # Utilities
-│   └── csvReader.ts      # Đọc file CSV
-├── playwright.config.ts  # Cấu hình Playwright
-├── package.json          # Dependencies
-└── tsconfig.json         # TypeScript config
+├── pages/                      # Page Object Models
+│   ├── BasePage.ts            # Lớp cơ sở
+│   ├── OrderListPage.ts       # Trang danh sách đơn hàng
+│   ├── OrderRegistPage.ts     # Trang đăng ký đơn hàng
+│   ├── CourseRegistPage.ts    # Trang đăng ký khóa học
+│   └── PageObjectTemplate.ts  # Template cho Page Object mới
+├── tests/                      # Test files
+│   ├── OrderRegist.spec.ts    # Test đăng ký đơn hàng
+│   └── example.spec.ts        # Test examples
+├── test-data/                  # Test data
+│   ├── order-data.csv         # Dữ liệu test đơn hàng
+│   └── course-regist-data.csv # Dữ liệu test đăng ký khóa học
+├── utils/                      # Utilities
+│   └── csvReader.ts           # Đọc file CSV
+├── .cursorrules                # Quy tắc generate code cho HTML DOM
+├── playwright.config.ts        # Cấu hình Playwright
+├── package.json                # Dependencies
+└── tsconfig.json               # TypeScript config
 ```
 
 ## ⚙️ Cấu hình
@@ -132,6 +137,30 @@ Sử dụng `npm run test:debug` để:
 - Support popup/new window handling
 - CSV data-driven testing
 - TypeScript với strict mode
+
+## 🤖 Code Generation Rules
+
+Dự án có file `.cursorrules` định nghĩa các quy tắc để generate code cho Page Objects:
+
+### Selector Priority
+1. `data-testid` (ưu tiên cao nhất)
+2. `id` (nếu unique và stable)
+3. `name` (cho form elements)
+4. Role-based selectors (Playwright best practice)
+5. CSS Selectors (kết hợp attributes)
+6. XPath (chỉ khi không có cách khác)
+
+### Tạo Page Object mới
+1. Copy `pages/PageObjectTemplate.ts` và đổi tên
+2. Điều chỉnh selectors theo HTML DOM thực tế
+3. Implement các methods cần thiết
+4. Follow naming conventions trong `.cursorrules`
+
+### Best Practices
+- Tất cả selectors phải là `private` properties
+- Sử dụng multiple fallback selectors khi có thể
+- Methods phải có JSDoc comments
+- Extend từ `BasePage` để tái sử dụng common methods
 
 ## 🤝 Đóng góp
 

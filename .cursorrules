@@ -1,0 +1,185 @@
+# Playwright Code Generation Rules - Tiếng Việt
+
+## Mục đích
+File này định nghĩa các quy tắc để generate code Playwright từ mô tả test specs bằng tiếng Việt.
+Người dùng sẽ chỉ viết mô tả test, AI sẽ tự động generate code chính xác.
+
+## Quy tắc hiểu mô tả tiếng Việt
+
+### 1. Từ khóa hành động → Playwright Actions
+- **"Mở trang" / "Truy cập" / "Vào"** → `page.goto(url)` hoặc `pageObject.open()`
+- **"Click" / "Nhấn" / "Bấm"** → `page.click(selector)` hoặc `page.getByRole().click()`
+- **"Điền" / "Nhập" / "Gõ"** → `page.fill(selector, value)`
+- **"Chọn" (dropdown/select)** → `page.selectOption(selector, { label: value })`
+- **"Chọn" (checkbox/radio)** → `page.check(selector)` hoặc `page.uncheck(selector)`
+- **"Gửi" / "Submit" / "Xác nhận"** → `page.click(submitButton)` hoặc `form.submit()`
+- **"Chờ" / "Đợi"** → `page.waitForSelector()` hoặc `page.waitForLoadState()`
+- **"Kiểm tra" / "Xác minh" / "Verify"** → `expect(locator).toBeVisible()` hoặc các assertions
+
+### 2. Từ khóa kiểm tra → Assertions
+- **"Kiểm tra hiển thị" / "Thấy"** → `expect(locator).toBeVisible()`
+- **"Kiểm tra có text" / "Chứa text"** → `expect(locator).toContainText(text)`
+- **"Kiểm tra URL"** → `expect(page).toHaveURL(url)`
+- **"Kiểm tra thành công"** → `pageObject.verifySuccess()` hoặc check success message
+- **"Kiểm tra lỗi" / "Có lỗi"** → `pageObject.verifyErrorVisible()` hoặc check error message
+- **"Kiểm tra field lỗi"** → `pageObject.verifyFieldError(fieldName)`
+
+### 3. Từ khóa element → Selectors
+- **"Button" / "Nút"** → `button` hoặc `getByRole('button')`
+- **"Input" / "Ô nhập"** → `input` với name/id/placeholder
+- **"Link" / "Liên kết"** → `a` hoặc `getByRole('link')`
+- **"Dropdown" / "Select" / "Danh sách"** → `select`
+- **"Checkbox"** → `input[type="checkbox"]`
+- **"Radio"** → `input[type="radio"]`
+- **"Textarea"** → `textarea`
+- **"Form"** → `form` hoặc các input bên trong
+
+## Quy tắc Generate Test Code
+
+### 1. Cấu trúc Test File
+```typescript
+import { test, expect } from '@playwright/test';
+import { PageObjectName } from '../pages/PageObjectName';
+
+test.describe('Mô tả nhóm test', () => {
+  test('Mô tả test case cụ thể', async ({ page }) => {
+    // Test steps
+  });
+});
+```
+
+### 2. Pattern Generate từ Mô tả
+Khi người dùng mô tả:
+- **"Mở trang X"** → Tạo Page Object nếu chưa có, gọi `pageObject.open()`
+- **"Điền form với dữ liệu Y"** → Gọi `pageObject.fillForm(data)` hoặc các method fill riêng lẻ
+- **"Click button Z"** → Gọi `pageObject.clickButton()` hoặc `page.click(selector)`
+- **"Kiểm tra kết quả"** → Gọi `pageObject.verifyResult()` hoặc assertions
+
+### 3. Data-driven Testing
+- Nếu mô tả có "với dữ liệu từ CSV" → Sử dụng `readCSV()` và loop qua data
+- Nếu có nhiều test cases tương tự → Tạo loop với `for (const data of csvData)`
+
+## Quy tắc Generate Page Object Code
+
+### 1. Selector Priority (theo thứ tự)
+1. **data-testid** (ưu tiên cao nhất)
+   ```typescript
+   private button = '[data-testid="submit-button"]';
+   ```
+2. **id** (nếu unique và stable)
+   ```typescript
+   private input = '#email-input';
+   ```
+3. **name** (cho form elements)
+   ```typescript
+   private input = '[name="email"]';
+   ```
+4. **Role-based** (Playwright best practice)
+   ```typescript
+   // Sử dụng trong method: page.getByRole('button', { name: 'Gửi' })
+   ```
+5. **CSS Selectors** (kết hợp attributes)
+   ```typescript
+   private input = 'input[type="email"][name="email"]';
+   ```
+6. **XPath** (chỉ khi không có cách khác)
+
+### 2. Selector với Multiple Fallbacks
+Luôn cung cấp nhiều selector options để tăng độ ổn định:
+```typescript
+private nameInput = 'input[name="name"], input[id="name"], input[data-testid="name"], input[placeholder*="tên"]';
+```
+
+### 3. Naming Conventions
+- **Selectors**: `camelCase` với suffix mô tả loại element
+  - `nameInput`, `emailInput`, `phoneInput`
+  - `submitButton`, `cancelButton`
+  - `courseSelect`, `countryDropdown`
+  - `errorMessage`, `successMessage`
+- **Methods**: 
+  - Actions: `fill*()`, `click*()`, `select*()`, `submit*()`
+  - Navigation: `open()`, `navigateTo()`, `goTo()`
+  - Verification: `verify*()`, `check*()`, `assert*()`
+
+### 4. Cấu trúc Page Object Class
+```typescript
+export class PageName extends BasePage {
+  // 1. Selectors (private)
+  private elementSelector = 'selector';
+  
+  // 2. Constructor
+  constructor(page: Page) {
+    super(page);
+  }
+  
+  // 3. Navigation methods
+  async open() { }
+  
+  // 4. Action methods
+  async fillField(value: string) { }
+  async clickButton() { }
+  
+  // 5. Verification methods
+  async verifyResult() { }
+}
+```
+
+### 5. Method Implementation Rules
+- **Fill methods**: Luôn dùng `page.fill()` cho input/textarea
+- **Select methods**: Dùng `page.selectOption()` với `{ label: value }` hoặc `{ value: value }`
+- **Click methods**: Dùng `page.click()` hoặc `page.getByRole().click()`
+- **Wait**: Luôn wait sau các actions quan trọng (submit, navigation)
+- **Error handling**: Tạo methods riêng để verify errors
+
+## Quy tắc đặc biệt
+
+### 1. Tự động tạo Page Object
+- Nếu test spec đề cập đến một trang mới chưa có Page Object → Tạo Page Object mới
+- Tên Page Object: `[PageName]Page.ts` (ví dụ: `LoginPage.ts`, `DashboardPage.ts`)
+- Luôn extend từ `BasePage`
+
+### 2. Tự động tạo Methods
+- Nếu mô tả có action chưa có method → Tạo method mới trong Page Object
+- Method name phải rõ ràng, mô tả đúng hành động
+
+### 3. Comments
+- Thêm comments tiếng Việt cho các bước quan trọng
+- JSDoc comments cho tất cả public methods
+
+### 4. Type Safety
+- Sử dụng TypeScript types cho tất cả parameters
+- Define interfaces cho form data objects
+- Return types cho methods
+
+## Ví dụ Generate Code
+
+### Input: Mô tả test
+```
+Test đăng nhập:
+- Mở trang đăng nhập
+- Điền email và password
+- Click button đăng nhập
+- Kiểm tra đăng nhập thành công
+```
+
+### Output: Generated Code
+```typescript
+test('Test đăng nhập', async ({ page }) => {
+  const loginPage = new LoginPage(page);
+  await loginPage.open();
+  await loginPage.fillEmail('user@example.com');
+  await loginPage.fillPassword('password123');
+  await loginPage.clickLoginButton();
+  await loginPage.verifyLoginSuccess();
+});
+```
+
+## Lưu ý quan trọng
+
+1. **Luôn sử dụng Page Object Pattern** - Không viết selectors trực tiếp trong test
+2. **Extend BasePage** - Tất cả Page Objects phải extend từ `BasePage`
+3. **Reuse methods** - Nếu method đã tồn tại, sử dụng lại thay vì tạo mới
+4. **Selector stability** - Ưu tiên selectors ổn định, tránh class names có thể thay đổi
+5. **Wait strategies** - Sử dụng `waitForLoadState()` thay vì `waitForTimeout()` khi có thể
+6. **Error messages** - Tạo selector chung cho error messages: `.error, .error-message, [class*="error"]`
+
